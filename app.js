@@ -3,6 +3,8 @@ const express_graphql = require('express-graphql');
 const schema = require('./schema/schema');
 const mongoose = require('mongoose');
 
+var port = process.env.PORT || 8000;
+
 mongoose.connect('mongodb://darrylb:darrylb123@ds261440.mlab.com:61440/speed-typing-app');
 mongoose.connection.once('open', () => {
     console.log('connected to database');
@@ -15,6 +17,6 @@ app.use('/graphql', express_graphql({
   graphiql: true
 }));
 
-app.listen(8000, () => {
-  console.log('Server is running on port 8000...')
+app.listen(port, () => {
+  console.log('Server is running on port ' + port + '...')
 });
