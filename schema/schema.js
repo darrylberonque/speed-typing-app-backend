@@ -23,6 +23,7 @@ const UserType = new GraphQLObjectType({
     name: { type: GraphQLString},
     email: { type: GraphQLString},
     imageURL: { type: GraphQLString },
+    authID: { type: GraphQLString },
     trials: {
       type: new GraphQLList(TrialType),
       resolve(parent, args) {
@@ -38,6 +39,7 @@ const TrialType = new GraphQLObjectType({
     id: { type: GraphQLID },
     paragraph: { type: GraphQLString},
     userID: { type: GraphQLString },
+    userInput: { type: GraphQLString },
     metrics: { type: MetricsType }
   })
 });
@@ -74,8 +76,7 @@ const MetricsType = new GraphQLObjectType ({
     time: { type: GraphQLInt },
     wpm: { type: GraphQLInt },
     cpm: { type: GraphQLInt },
-    accuracy: { type: GraphQLFloat },
-    results: { type: new GraphQLList(GraphQLBoolean) }
+    accuracy: { type: GraphQLFloat }
   })
 });
 
@@ -85,8 +86,7 @@ const MetricsInputType = new GraphQLInputObjectType ({
     time: { type: GraphQLInt },
     wpm: { type: GraphQLInt },
     cpm: { type: GraphQLInt },
-    accuracy: { type: GraphQLFloat },
-    results: { type: new GraphQLList(GraphQLBoolean) }
+    accuracy: { type: GraphQLFloat }
   })
 });
 
@@ -98,22 +98,21 @@ const Mutation = new GraphQLObjectType({
       args: {
         paragraph: { type: GraphQLString },
         userID: { type: GraphQLString },
+        userInput: { type: GraphQLString },
         metrics: {
           type: MetricsInputType,
           args: {
             time: { type: GraphQLInt },
             wpm: { type: GraphQLInt },
             cpm: { type: GraphQLInt },
-            accuracy: { type: GraphQLFloat },
-            results: { type: new GraphQLList(GraphQLBoolean) }
+            accuracy: { type: GraphQLFloat }
           },
           resolve(parent, args) {
             let metrics = {
               time: args.time,
               wpm: args.wpm,
               cpm: args.cpm,
-              accuracy: args.accuracy,
-              results: args.results
+              accuracy: args.accuracy
             };
 
             return metrics
@@ -124,10 +123,36 @@ const Mutation = new GraphQLObjectType({
         let trial = new Trial({
           paragraph: args.paragraph,
           userID: args.userID,
+          userInput: args.userInput,
           metrics: args.metrics
         });
 
         return trial.save();
+      }
+    },
+    postUser: {
+      type: UserType,
+      args: {
+        name: { type: GraphQLString},
+        email: { type: GraphQLString},
+        imageURL: { type: GraphQLString },
+        authID: { type: GraphQLString }
+      },
+      resolve(parent, args) {
+        let user = new User({
+          name: args.name,
+          email: args.email,
+          imageURL: args.imageURL,
+          authID: args.authID
+        });
+
+        User.distinct('authID', function(error, authIDs) {
+          if (!authIDs.includes(user.authID)) {
+            user.save();
+          }
+        });
+
+        return user
       }
     }
   }

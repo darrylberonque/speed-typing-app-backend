@@ -4,12 +4,12 @@ const Schema = mongoose.Schema;
 const trialSchema = new Schema({
   paragraph: String,
   userID: String,
+  userInput: String,
   metrics: {
     time: Number,
     wpm: Number,
     cpm: Number,
-    accuracy: Number,
-    results: [Boolean]
+    accuracy: Number
   }
 });
 
