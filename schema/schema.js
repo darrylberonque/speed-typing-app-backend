@@ -2,6 +2,7 @@ const graphql = require('graphql')
 const _ = require('lodash')
 const User = require('../models/user')
 const Trial = require('../models/trial')
+const Paragraph = require('../models/paragraph')
 
 const {
   GraphQLObjectType,
@@ -44,6 +45,14 @@ const TrialType = new GraphQLObjectType({
   })
 });
 
+const ParagraphType = new GraphQLObjectType({
+  name: 'Paragraph',
+  fields: () => ({
+    id: { type: GraphQLID },
+    content: { type: GraphQLString}
+  })
+});
+
 const RootQuery = new GraphQLObjectType({
   name: 'RootQueryType',
   fields: {
@@ -65,6 +74,12 @@ const RootQuery = new GraphQLObjectType({
       type: new GraphQLList(TrialType),
       resolve(parent, args) {
         return Trial.find({});
+      }
+    },
+    paragraphs: {
+      type: new GraphQLList(ParagraphType),
+      resolve(parent, args) {
+        return Paragraph.find({});
       }
     }
   }
@@ -152,7 +167,20 @@ const Mutation = new GraphQLObjectType({
           }
         });
 
-        return user
+        return user;
+      }
+    },
+    postParagraph: {
+      type: ParagraphType,
+      args: {
+        content: { type: GraphQLString }
+      },
+      resolve(parent, args) {
+        let paragraph = new Paragraph({
+          content: args.content
+        });
+
+        return paragraph.save();
       }
     }
   }
