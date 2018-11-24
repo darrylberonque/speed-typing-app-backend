@@ -5,6 +5,7 @@ const Trial = require('../models/trial')
 
 const {
   GraphQLObjectType,
+  GraphQLInputObjectType,
   GraphQLString,
   GraphQLSchema,
   GraphQLID,
@@ -12,6 +13,7 @@ const {
   GraphQLInt,
   GraphQLFloat,
   GraphQLList,
+  GraphQLNonNull
 } = graphql
 
 const UserType = new GraphQLObjectType({
@@ -35,29 +37,8 @@ const TrialType = new GraphQLObjectType({
   fields: () => ({
     id: { type: GraphQLID },
     paragraph: { type: GraphQLString},
-    user: {
-      type: UserType,
-      resolve(parent, args) {
-        return User.findById(parent.userID)
-      }
-    },
-    metrics: {
-      type: MetricsType,
-      resolve(parent, args) {
-        return parent.metrics
-      }
-    }
-  })
-});
-
-const MetricsType = new GraphQLObjectType({
-  name: 'Metrics',
-  fields: () => ({
-    time: { type: GraphQLInt },
-    wpm: { type: GraphQLInt },
-    cpm: { type: GraphQLInt },
-    accuracy: { type: GraphQLFloat },
-    results: { type: new GraphQLList(GraphQLBoolean) }
+    userID: { type: GraphQLString },
+    metrics: { type: MetricsType }
   })
 });
 
@@ -87,6 +68,28 @@ const RootQuery = new GraphQLObjectType({
   }
 });
 
+const MetricsType = new GraphQLObjectType ({
+  name: 'MetricsOutput',
+  fields: () => ({
+    time: { type: GraphQLInt },
+    wpm: { type: GraphQLInt },
+    cpm: { type: GraphQLInt },
+    accuracy: { type: GraphQLFloat },
+    results: { type: new GraphQLList(GraphQLBoolean) }
+  })
+});
+
+const MetricsInputType = new GraphQLInputObjectType ({
+  name: 'MetricsInput',
+  fields: () => ({
+    time: { type: GraphQLInt },
+    wpm: { type: GraphQLInt },
+    cpm: { type: GraphQLInt },
+    accuracy: { type: GraphQLFloat },
+    results: { type: new GraphQLList(GraphQLBoolean) }
+  })
+});
+
 const Mutation = new GraphQLObjectType({
   name: 'Mutation',
   fields: {
@@ -95,19 +98,33 @@ const Mutation = new GraphQLObjectType({
       args: {
         paragraph: { type: GraphQLString },
         userID: { type: GraphQLString },
-        metrics: { type: MetricsType }
+        metrics: {
+          type: MetricsInputType,
+          args: {
+            time: { type: GraphQLInt },
+            wpm: { type: GraphQLInt },
+            cpm: { type: GraphQLInt },
+            accuracy: { type: GraphQLFloat },
+            results: { type: new GraphQLList(GraphQLBoolean) }
+          },
+          resolve(parent, args) {
+            let metrics = {
+              time: args.time,
+              wpm: args.wpm,
+              cpm: args.cpm,
+              accuracy: args.accuracy,
+              results: args.results
+            };
+
+            return metrics
+          }
+        }
       },
       resolve(parent, args) {
         let trial = new Trial({
           paragraph: args.paragraph,
           userID: args.userID,
-          metrics: {
-            time: args.metrics.time,
-            wpm: args.metrics.wpm,
-            cpm: args.metrics.cpm,
-            accuracy: args.metrics.accuracy,
-            results: args.metrics.results
-          }
+          metrics: args.metrics
         });
 
         return trial.save();
