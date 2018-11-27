@@ -14,7 +14,6 @@ const {
   GraphQLInt,
   GraphQLFloat,
   GraphQLList,
-  GraphQLNonNull
 } = graphql
 
 const UserType = new GraphQLObjectType({
@@ -154,20 +153,27 @@ const Mutation = new GraphQLObjectType({
         authID: { type: GraphQLString }
       },
       resolve(parent, args) {
-        let user = new User({
-          name: args.name,
-          email: args.email,
-          imageURL: args.imageURL,
-          authID: args.authID
+        var postedUser = new Promise(function(resolve, reject) {
+          let user = new User({
+            name: args.name,
+            email: args.email,
+            imageURL: args.imageURL,
+            authID: args.authID
+          });
+
+          User.distinct('authID', function(error, authIDs) {
+            if (!authIDs.includes(user.authID)) {
+              resolve(user.save());
+            } else {
+              var existingUser = User.findOne({ authID: user.authID}).exec();
+              existingUser.then(function(data) {
+                  resolve(data);
+              });
+            }
+          });
         });
 
-        User.distinct('authID', function(error, authIDs) {
-          if (!authIDs.includes(user.authID)) {
-            user.save();
-          }
-        });
-
-        return user;
+        return postedUser;
       }
     },
     postParagraph: {
